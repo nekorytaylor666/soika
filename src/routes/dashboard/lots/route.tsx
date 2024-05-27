@@ -1,213 +1,137 @@
-import TenderMainInfo from "@/components/TenderMainInfo";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { H4 } from "@/components/ui/typography";
-import { formatNumberWithCommas } from "@/lib/utils";
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import { z } from "zod";
+import { H4, Large, Lead, P } from "@/components/ui/typography";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { MoreHorizontal, Package } from "lucide-react";
 
-import { TenderProductTable } from "@/components/TenderProductTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
+import { toast } from "sonner";
+import { formatNumberWithCommas } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Lot } from "../../../../../backend/src/db/schema";
 
 export const Route = createFileRoute("/dashboard/lots")({
-	parseParams: (params) => ({
-		lotId: z.string().parse(params.lotId),
-	}),
-	pendingComponent: TenderSkeleton,
-
-	component: () => <LotPage />,
+  component: () => <LotsPage />,
+  pendingComponent: LoadingLotsPage,
 });
 
-function LotPage() {
-	const { lotId } = Route.useParams();
-	const [lot] = trpc.lot.getById.useSuspenseQuery(lotId);
-	if (!lot) {
-		return <div>Лот не найден</div>;
-	}
-	const { history } = useRouter();
-	return (
-		<div className="bg-background w-full">
-			<div className="h-16 border-b px-4 flex justify-center items-center relative">
-				<Button
-					onClick={() => history.back()}
-					variant="ghost"
-					size={"icon"}
-					className="p-2 absolute left-4"
-				>
-					<ArrowLeft className="w-full" />
-				</Button>
-
-				<H4>Детали объявления</H4>
-			</div>
-			<div className="container lg:max-w-3xl mt-4">
-				<div>
-					<TenderMainInfo
-						tenderName={lot?.lotName ?? ""}
-						tenderStatus="Опубликовано (прием ценовых предложений)"
-						totalCost={`KZT ${formatNumberWithCommas(lot?.budget ?? 0)}`}
-						deadline={lot?.deliveryTerm ?? ""}
-						tenderNumber={lot?.lotNumber ?? ""}
-					/>
-				</div>
-				<Tabs defaultValue="details" className="w-full mt-4">
-					<TabsList className="mb-2">
-						<TabsTrigger value="details">Детали объявления</TabsTrigger>
-						<TabsTrigger value="candidates">Предложения от ИИ</TabsTrigger>
-					</TabsList>
-					<TabsContent value="candidates">
-						<Card>
-							<CardHeader>
-								<CardTitle>
-									<Link
-										to="/dashboard/products/$tenderId"
-										params={{ tenderId: "1" }}
-									>
-										<Button className="px-0 text-lg" variant="link">
-											Варианты продуктов
-										</Button>
-									</Link>
-								</CardTitle>
-								<CardDescription>
-									Варианты продуктов, которые подходят под технические
-									спецификации
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<TenderProductTable />
-							</CardContent>
-						</Card>
-					</TabsContent>
-					<TabsContent value="details">
-						<TenderDetails data={lot} />
-					</TabsContent>
-				</Tabs>
-			</div>
-		</div>
-	);
+function LotsPage() {
+  const [lots] = trpc.lot.getAllWithRecommendations.useSuspenseQuery();
+  const [boards] = trpc.board.getAllByUser.useSuspenseQuery();
+  const addToDealBoardMutation = trpc.lot.addToDealBoard.useMutation();
+  const navigation = useNavigate();
+  const utils = trpc.useUtils();
+  const onAddToDealBoard = (lotId: string, boardId: string) => {
+    addToDealBoardMutation.mutate(
+      { lotId, boardId },
+      {
+        onSuccess: () => {
+          toast("Лот добавлен в доску", {
+            action: {
+              label: "К доске",
+              onClick: () => {
+                navigation({
+                  to: "/dashboard/feed/$boardId",
+                  params: { boardId },
+                });
+              },
+            },
+          });
+          utils.board.getById.invalidate();
+        },
+      },
+    );
+  };
+  return (
+    <div className="w-full bg-background">
+      <div className="flex h-16 items-center justify-start border-b px-4">
+        <H4>Лоты, которые мы подобрали</H4>
+      </div>
+      <ScrollArea className="h-[calc(100vh-4rem)]">
+        <div className="container mt-4 flex flex-col gap-4 lg:max-w-2xl">
+          {lots.map((lot) => (
+            <div
+              className="flex flex-col gap-2 border-b pb-4"
+              key={lot.lotNumber}
+            >
+              <div className="flex items-center justify-between">
+                <Large className="cursor-pointer text-primary hover:underline">
+                  {lot.lotName}
+                </Large>
+                <Lead className="font-mono text-base text-white">
+                  {formatNumberWithCommas(lot.budget ?? 0)} KZT
+                </Lead>
+              </div>
+              <P className="font-mono text-muted-foreground text-sm">
+                {lot.lotDescription} {lot.lotAdditionalDescription}
+              </P>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Package className="size-4" />
+                  <P>{lot.recommendedProducts.length} Товар</P>
+                </div>
+                <Menubar className="border-none">
+                  <MenubarMenu>
+                    <MenubarTrigger className="cursor-pointer hover:bg-muted">
+                      <MoreHorizontal className="size-4" />
+                    </MenubarTrigger>
+                    <MenubarContent>
+                      <MenubarItem>
+                        Перейти к лоту <MenubarShortcut>⌘T</MenubarShortcut>
+                      </MenubarItem>
+                      <MenubarSeparator />
+                      <MenubarSub>
+                        <MenubarSubTrigger>Добавить в доску</MenubarSubTrigger>
+                        <MenubarSubContent>
+                          {boards.map((board) => (
+                            <MenubarItem
+                              key={board.id}
+                              onClick={() =>
+                                onAddToDealBoard(lot.lotNumber, board.id)
+                              }
+                            >
+                              # {board.name}
+                            </MenubarItem>
+                          ))}
+                        </MenubarSubContent>
+                      </MenubarSub>
+                    </MenubarContent>
+                  </MenubarMenu>
+                </Menubar>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
 }
 
-function TenderDetails({ data }: { data: Lot }) {
-	return (
-		<div>
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-lg">Детали объявления</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex flex-col gap-2">
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Наименование лота
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  ">{data.lotName}</div>
-							</div>
-						</div>
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Описание
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  ">{data.lotDescription}</div>
-							</div>
-						</div>
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Кол-во
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  ">
-									{data.quantity} {data.unitOfMeasure}
-								</div>
-							</div>
-						</div>
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Спецификации
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  list-disc [&>li]:mt-2">
-									<ul>{data.lotAdditionalDescription}</ul>
-								</div>
-							</div>
-						</div>
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Адрес поставки
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  ">{data.deliveryPlaces}</div>
-							</div>
-						</div>
-						<div className="w-full">
-							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium text-primary">
-									Срок поставки
-								</CardTitle>
-							</div>
-							<div>
-								<div className=" font-mono  ">{data.deliveryTerm}</div>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
-}
-
-function TenderSkeleton() {
-	return (
-		<div className="bg-background w-full">
-			<div className="h-16 border-b px-4 flex justify-center items-center relative">
-				<Button
-					onClick={() => history.back()}
-					variant="ghost"
-					size={"icon"}
-					className="p-2 absolute left-4"
-				>
-					<ArrowLeft className="w-full" />
-				</Button>
-
-				<H4>Детали объявления</H4>
-			</div>
-			<div className="container lg:max-w-3xl mt-4">
-				<div>
-					<Skeleton className="w-full h-40 rounded-lg" />
-				</div>
-				<Tabs defaultValue="details" className="w-full mt-4">
-					<TabsList className="mb-2">
-						<TabsTrigger value="details">Детали объявления</TabsTrigger>
-						<TabsTrigger value="candidates">Предложения от ИИ</TabsTrigger>
-					</TabsList>
-					<TabsContent value="candidates">
-						<Skeleton className="w-full h-[1000px] rounded-lg" />
-					</TabsContent>
-					<TabsContent value="details">
-						<Skeleton className="w-full h-[1000px] rounded-lg" />
-					</TabsContent>
-				</Tabs>
-			</div>
-		</div>
-	);
+function LoadingLotsPage() {
+  return (
+    <div className="w-full bg-background">
+      <div className="flex h-16 items-center justify-start border-b px-4">
+        <H4>Лоты, которые мы подобрали</H4>
+      </div>
+      <ScrollArea className="h-[calc(100vh-4rem)]">
+        <div className="container mt-4 flex flex-col gap-4 lg:max-w-2xl">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div className="flex flex-col gap-2" key={index}>
+              <Skeleton className="h-28 w-full" />
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
 }
