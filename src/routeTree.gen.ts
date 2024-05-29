@@ -20,9 +20,9 @@ import { Route as DashboardRouteImport } from './routes/dashboard/route'
 import { Route as DashboardDealIdImport } from './routes/dashboard/$dealId'
 import { Route as DashboardLotsRouteImport } from './routes/dashboard/lots/route'
 import { Route as DashboardProductsTenderIdImport } from './routes/dashboard/products/$tenderId'
-import { Route as DashboardLotsTestImport } from './routes/dashboard/lots/test'
+import { Route as DashboardLotLotIdImport } from './routes/dashboard/lot.$lotId'
 import { Route as DashboardFeedBoardIdImport } from './routes/dashboard/feed/$boardId'
-import { Route as DashboardCandidateTenderIdCandidateIdImport } from './routes/dashboard/candidate/$tenderId.$candidateId'
+import { Route as DashboardCandidateRecommendedIdImport } from './routes/dashboard/candidate/$recommendedId'
 
 // Create Virtual Routes
 
@@ -82,9 +82,9 @@ const DashboardProductsTenderIdRoute = DashboardProductsTenderIdImport.update({
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 
-const DashboardLotsTestRoute = DashboardLotsTestImport.update({
-  path: '/test',
-  getParentRoute: () => DashboardLotsRouteRoute,
+const DashboardLotLotIdRoute = DashboardLotLotIdImport.update({
+  path: '/lot/$lotId',
+  getParentRoute: () => DashboardRouteRoute,
 } as any)
 
 const DashboardFeedBoardIdRoute = DashboardFeedBoardIdImport.update({
@@ -92,9 +92,9 @@ const DashboardFeedBoardIdRoute = DashboardFeedBoardIdImport.update({
   getParentRoute: () => DashboardRouteRoute,
 } as any)
 
-const DashboardCandidateTenderIdCandidateIdRoute =
-  DashboardCandidateTenderIdCandidateIdImport.update({
-    path: '/candidate/$tenderId/$candidateId',
+const DashboardCandidateRecommendedIdRoute =
+  DashboardCandidateRecommendedIdImport.update({
+    path: '/candidate/$recommendedId',
     getParentRoute: () => DashboardRouteRoute,
   } as any)
 
@@ -165,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDealIdImport
       parentRoute: typeof DashboardRouteImport
     }
+    '/dashboard/candidate/$recommendedId': {
+      id: '/dashboard/candidate/$recommendedId'
+      path: '/candidate/$recommendedId'
+      fullPath: '/dashboard/candidate/$recommendedId'
+      preLoaderRoute: typeof DashboardCandidateRecommendedIdImport
+      parentRoute: typeof DashboardRouteImport
+    }
     '/dashboard/feed/$boardId': {
       id: '/dashboard/feed/$boardId'
       path: '/feed/$boardId'
@@ -172,25 +179,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFeedBoardIdImport
       parentRoute: typeof DashboardRouteImport
     }
-    '/dashboard/lots/test': {
-      id: '/dashboard/lots/test'
-      path: '/test'
-      fullPath: '/dashboard/lots/test'
-      preLoaderRoute: typeof DashboardLotsTestImport
-      parentRoute: typeof DashboardLotsRouteImport
+    '/dashboard/lot/$lotId': {
+      id: '/dashboard/lot/$lotId'
+      path: '/lot/$lotId'
+      fullPath: '/dashboard/lot/$lotId'
+      preLoaderRoute: typeof DashboardLotLotIdImport
+      parentRoute: typeof DashboardRouteImport
     }
     '/dashboard/products/$tenderId': {
       id: '/dashboard/products/$tenderId'
       path: '/products/$tenderId'
       fullPath: '/dashboard/products/$tenderId'
       preLoaderRoute: typeof DashboardProductsTenderIdImport
-      parentRoute: typeof DashboardRouteImport
-    }
-    '/dashboard/candidate/$tenderId/$candidateId': {
-      id: '/dashboard/candidate/$tenderId/$candidateId'
-      path: '/candidate/$tenderId/$candidateId'
-      fullPath: '/dashboard/candidate/$tenderId/$candidateId'
-      preLoaderRoute: typeof DashboardCandidateTenderIdCandidateIdImport
       parentRoute: typeof DashboardRouteImport
     }
   }
@@ -201,13 +201,12 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
   DashboardRouteRoute: DashboardRouteRoute.addChildren({
-    DashboardLotsRouteRoute: DashboardLotsRouteRoute.addChildren({
-      DashboardLotsTestRoute,
-    }),
+    DashboardLotsRouteRoute,
     DashboardDealIdRoute,
+    DashboardCandidateRecommendedIdRoute,
     DashboardFeedBoardIdRoute,
+    DashboardLotLotIdRoute,
     DashboardProductsTenderIdRoute,
-    DashboardCandidateTenderIdCandidateIdRoute,
   }),
   LoginRoute,
   TestRoute,
@@ -241,9 +240,10 @@ export const routeTree = rootRoute.addChildren({
       "children": [
         "/dashboard/lots",
         "/dashboard/$dealId",
+        "/dashboard/candidate/$recommendedId",
         "/dashboard/feed/$boardId",
-        "/dashboard/products/$tenderId",
-        "/dashboard/candidate/$tenderId/$candidateId"
+        "/dashboard/lot/$lotId",
+        "/dashboard/products/$tenderId"
       ]
     },
     "/login": {
@@ -263,29 +263,26 @@ export const routeTree = rootRoute.addChildren({
     },
     "/dashboard/lots": {
       "filePath": "dashboard/lots/route.tsx",
-      "parent": "/dashboard",
-      "children": [
-        "/dashboard/lots/test"
-      ]
+      "parent": "/dashboard"
     },
     "/dashboard/$dealId": {
       "filePath": "dashboard/$dealId.tsx",
+      "parent": "/dashboard"
+    },
+    "/dashboard/candidate/$recommendedId": {
+      "filePath": "dashboard/candidate/$recommendedId.tsx",
       "parent": "/dashboard"
     },
     "/dashboard/feed/$boardId": {
       "filePath": "dashboard/feed/$boardId.tsx",
       "parent": "/dashboard"
     },
-    "/dashboard/lots/test": {
-      "filePath": "dashboard/lots/test.tsx",
-      "parent": "/dashboard/lots"
+    "/dashboard/lot/$lotId": {
+      "filePath": "dashboard/lot.$lotId.tsx",
+      "parent": "/dashboard"
     },
     "/dashboard/products/$tenderId": {
       "filePath": "dashboard/products/$tenderId.tsx",
-      "parent": "/dashboard"
-    },
-    "/dashboard/candidate/$tenderId/$candidateId": {
-      "filePath": "dashboard/candidate/$tenderId.$candidateId.tsx",
       "parent": "/dashboard"
     }
   }

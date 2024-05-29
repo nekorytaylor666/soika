@@ -54,7 +54,7 @@ export function KanbanBoard({ statuses, deals }: KanbanBoardProps) {
 			content: deal.lot.lotDescription,
 			budget: deal.lot.budget,
 			deadline: new Date(),
-			lot: deal.lot.id,
+			lot: deal.lot.lotNumber,
 		}));
 
 		setColumns(columns);

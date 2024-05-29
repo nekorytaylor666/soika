@@ -1,5 +1,5 @@
 import { H4, Large, Lead, P } from "@/components/ui/typography";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { MoreHorizontal, Package } from "lucide-react";
 
 import { trpc } from "@/lib/trpc";
@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { formatNumberWithCommas } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AddTenderDialog } from "@/components/addTenderDialog";
 
 export const Route = createFileRoute("/dashboard/lots")({
   component: () => <LotsPage />,
@@ -59,6 +60,7 @@ function LotsPage() {
       </div>
       <ScrollArea className="h-[calc(100vh-4rem)]">
         <div className="container mt-4 flex flex-col gap-4 lg:max-w-2xl">
+          <AddTenderDialog />
           {lots.map((lot) => (
             <div
               className="flex flex-col gap-2 border-b pb-4"
@@ -72,7 +74,7 @@ function LotsPage() {
                   {formatNumberWithCommas(lot.budget ?? 0)} KZT
                 </Lead>
               </div>
-              <P className="font-mono text-muted-foreground text-sm">
+              <P className="font-mono text-muted-foreground text-sm lowercase">
                 {lot.lotDescription} {lot.lotAdditionalDescription}
               </P>
               <div className="flex items-center justify-between">
@@ -86,8 +88,13 @@ function LotsPage() {
                       <MoreHorizontal className="size-4" />
                     </MenubarTrigger>
                     <MenubarContent>
-                      <MenubarItem>
-                        Перейти к лоту <MenubarShortcut>⌘T</MenubarShortcut>
+                      <MenubarItem asChild>
+                        <Link
+                          to="/dashboard/lot/$lotId"
+                          params={{ lotId: lot.lotNumber }}
+                        >
+                          Перейти к лоту <MenubarShortcut>⌘T</MenubarShortcut>
+                        </Link>
                       </MenubarItem>
                       <MenubarSeparator />
                       <MenubarSub>

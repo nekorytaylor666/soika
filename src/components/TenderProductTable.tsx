@@ -17,15 +17,15 @@ import {
 } from "./ui/dropdown-menu";
 import { Progress } from "./ui/progress";
 import { Link } from "@tanstack/react-router";
+import type { RecommendedProduct } from "../../../backend/src/db/schema";
 
-export function TenderProductTable() {
+export function TenderProductTable(props: {
+	recommendedProducts: RecommendedProduct[];
+}) {
 	return (
 		<Table>
 			<TableHeader>
 				<TableRow>
-					<TableHead className="hidden w-[100px] sm:table-cell">
-						<span className="sr-only">img</span>
-					</TableHead>
 					<TableHead>Название</TableHead>
 					<TableHead>Цена</TableHead>
 					<TableHead>Рейтинг</TableHead>
@@ -35,32 +35,30 @@ export function TenderProductTable() {
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				<TenderProductRow />
-				<TenderProductRow />
-				<TenderProductRow />
+				{props.recommendedProducts.map((product) => (
+					<TenderProductRow key={product.id} product={product} />
+				))}
 			</TableBody>
 		</Table>
 	);
 }
 
-const TenderProductRow = () => {
+const TenderProductRow = (props: { product: RecommendedProduct }) => {
 	return (
 		<TableRow>
-			<TableCell className="hidden sm:table-cell">
-				<img
-					alt="Product img"
-					className="aspect-square rounded-md object-cover"
-					height="64"
-					src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Placeholder_view_vector.svg/991px-Placeholder_view_vector.svg.png"
-					width="64"
-				/>
-			</TableCell>
-			<TableCell className="font-medium">Laser Lemonade Machine</TableCell>
-			<TableCell>$499.99</TableCell>
+			<TableCell className="font-medium">{props.product.productName}</TableCell>
 			<TableCell>
-				<div className="flex flex-col items-center gap-2 justify-center">
-					<span className="text-sm font-medium">8/10</span>
-					<Progress max={10} value={80} />
+				{props.product.price}{" "}
+				<span className="text-xs text-muted-foreground">
+					{props.product.currency}/{props.product.unitOfMeasure}
+				</span>
+			</TableCell>
+			<TableCell>
+				<div className="flex flex-col items-start gap-2 justify-center">
+					<span className="text-sm font-medium">
+						{props.product.complianceScore}/10
+					</span>
+					<Progress max={10} value={props.product.complianceScore * 10} />
 				</div>
 			</TableCell>
 			<TableCell>
@@ -75,10 +73,9 @@ const TenderProductRow = () => {
 						<DropdownMenuLabel>Действия</DropdownMenuLabel>
 						<DropdownMenuItem asChild>
 							<Link
-								to="/dashboard/candidate/$tenderId/$candidateId"
+								to="/dashboard/candidate/$recommendedId"
 								params={{
-									tenderId: "1",
-									candidateId: "1",
+									recommendedId: props.product.id.toString(),
 								}}
 							>
 								Посмотреть

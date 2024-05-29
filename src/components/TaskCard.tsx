@@ -25,6 +25,7 @@ import { Large } from "./ui/typography";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Link } from "@tanstack/react-router";
 import { formatNumberWithCommas } from "@/lib/utils";
+import type { BoardDeal } from "../../../backend/src/db/schema";
 
 export interface Task {
 	id: UniqueIdentifier;
@@ -37,7 +38,7 @@ export interface Task {
 }
 
 interface TaskCardProps {
-	task: Task;
+	task: BoardDeal;
 	isOverlay?: boolean;
 }
 
@@ -45,7 +46,7 @@ export type TaskType = "Task";
 
 export interface TaskDragData {
 	type: TaskType;
-	task: Task;
+	task: BoardDeal;
 }
 
 export function TaskCard({ task, isOverlay }: TaskCardProps) {
@@ -66,6 +67,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
 			roleDescription: "Task",
 		},
 	});
+	console.log(task);
 
 	const style = {
 		transition,
@@ -91,7 +93,10 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
 		>
 			<CardHeader className="px-4 pt-4 pb-0 space-between flex flex-row  items-center justify-between relative ">
 				<Button variant={"link"} className="px-0 text-white">
-					<Link to="/dashboard/$dealId" params={{ dealId: task.id as string }}>
+					<Link
+						to="/dashboard/lot/$lotId"
+						params={{ lotId: task.lot as string }}
+					>
 						<Large>{task.title}</Large>
 					</Link>
 				</Button>

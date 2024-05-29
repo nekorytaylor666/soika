@@ -72,17 +72,15 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { trpc } from "@/lib/trpc";
+import { z } from "zod";
+import { formatNumberWithCommas } from "@/lib/utils";
 
-export const Route = createFileRoute(
-	"/dashboard/candidate/$tenderId/$candidateId",
-)({
+export const Route = createFileRoute("/dashboard/candidate/$recommendedId")({
 	component: ProductCandidatePage,
-	loader: async ({ params }) => {
-		return {
-			tenderId: params.tenderId,
-			candidateId: params.candidateId,
-		};
-	},
+	parseParams: (params) => ({
+		recommendedId: z.string().parse(params.recommendedId),
+	}),
 });
 const nodeTypes = {
 	custom: customNode,
@@ -746,156 +744,123 @@ const initEdges: Edge[] = [
 	},
 ];
 function ProductCandidatePage() {
-	const [nodes, onNodesChange] = useNodesState(initNodes);
-	const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
-
-	const onConnect = useCallback(
-		(params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-		[setEdges],
-	);
+	const { recommendedId } = Route.useParams();
+	const [candidate] =
+		trpc.recommendedProducts.getById.useSuspenseQuery(recommendedId);
 
 	return (
-		<main className="grid flex-1 gap-4 overflow-auto px-4 grid-cols-[auto_60%] bg-background">
+		<main className="  flex-1 gap-4 overflow-auto  bg-background">
 			<div
-				className="relative hidden flex-col items-start md:flex"
+				className="relative hidden flex-col items-start md:flex "
 				x-chunk="dashboard-03-chunk-0"
 			>
-				<div className="flex flex-col h-16 justify-center items-center">
-					<div className="flex flex-col">
-						<H4>Предлагаемые продукты для тендера</H4>
-					</div>
+				<div className="h-16 border-b flex justify-center items-center relative w-full">
+					<Button
+						onClick={() => history.back()}
+						variant="ghost"
+						size={"icon"}
+						className="p-2 absolute left-4"
+					>
+						<ArrowLeft className="w-full" />
+					</Button>
+
+					<H4>Рекомендация для лота {candidate?.lotId}</H4>
 				</div>
-				<div className="flex flex-col gap-4">
-					<div className="w-full">
-						<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium text-primary">
-								Название продукта
-							</CardTitle>
-						</div>
-						<div>
-							<Button
-								asChild
-								variant={"link"}
-								className="text-lg font-mono px-0 text-muted-foreground"
-							>
-								<a
-									target="_blank"
-									rel="noreferrer"
-									href="https://hiberg.ru/katalog/morozilnye-kamery/morozilnik-hiberg-pf-42l2gw/"
-								>
-									Морозильный ларь Hiberg PF 42 L2GW bvB
-								</a>
-							</Button>
-						</div>
-					</div>
-					<div className="grid grid-cols-2">
+				<div className="container max-w-3xl">
+					<div className="flex flex-col gap-4 pt-4">
 						<div className="w-full">
 							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
 								<CardTitle className="text-sm font-medium text-primary">
-									Цена
+									Название продукта
 								</CardTitle>
 							</div>
 							<div>
-								<div className="text-lg font-mono">RUB 48,900</div>
+								<Button
+									asChild
+									variant={"link"}
+									className="text-lg font-mono px-0 text-muted-foreground"
+								>
+									<a
+										target="_blank"
+										rel="noreferrer"
+										href={candidate?.sourceUrl ?? ""}
+									>
+										{candidate?.productName}
+									</a>
+								</Button>
 							</div>
 						</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<div className="w-full">
-									<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-										<CardTitle className="text-sm font-medium text-primary">
-											Рейтинг
-										</CardTitle>
-									</div>
-									<div className="flex gap-2 items-center">
-										<div className="text-lg font-mono">8/10</div>
-										<Progress value={80} />
+						<div className="grid grid-cols-2">
+							<div className="w-full">
+								<div className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<CardTitle className="text-sm font-medium text-primary">
+										Цена
+									</CardTitle>
+								</div>
+								<div>
+									<div className="text-lg font-mono">
+										{formatNumberWithCommas(candidate?.price ?? 0)}{" "}
+										{candidate?.currency}
 									</div>
 								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								<p>
-									Насколько продукт соответствует технической Спецификации по
-									мнению ИИ
-								</p>
-							</TooltipContent>
-						</Tooltip>
-					</div>
-					<div className="w-full">
-						<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium text-primary">
-								Описание
-							</CardTitle>
+							</div>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div className="w-full">
+										<div className="flex flex-row items-center justify-between space-y-0 pb-2">
+											<CardTitle className="text-sm font-medium text-primary">
+												Рейтинг
+											</CardTitle>
+										</div>
+										<div className="flex gap-2 items-center">
+											<div className="text-lg font-mono">
+												{candidate?.complianceScore}/10
+											</div>
+											<Progress value={candidate?.complianceScore * 10} />
+										</div>
+									</div>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>
+										Насколько продукт соответствует технической Спецификации по
+										мнению ИИ
+									</p>
+								</TooltipContent>
+							</Tooltip>
 						</div>
-						<div>
-							<div className=" font-mono">
-								Морозильный ларь Hiberg PF 42 L2GW предназначен для эффективного
-								замораживания и длительного хранения большого объема продуктов.
+						<div className="w-full">
+							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
+								<CardTitle className="text-sm font-medium text-primary">
+									Описание
+								</CardTitle>
+							</div>
+							<div>
+								<div className=" font-mono">
+									{candidate?.productDescription}
+								</div>
 							</div>
 						</div>
-					</div>
-					<div className="w-full">
-						<div className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium text-primary">
-								Спецификации
-							</CardTitle>
-						</div>
-						<div>
-							<div className=" font-mono  list-disc [&>li]:mt-2">
-								<ul>
-									<li>Общий объем камеры: 420 л</li>
-									<li>Класс энергоэффективности: А</li>
-									<li>Энергопотребление: 365 кВт/год</li>
-									<li>Хладагент: R600a</li>
-									<li>Климатический класс: ST</li>
-									<li>Вспениватель теплоизоляции: Cyclopentane</li>
-									<li>Размораживание морозильной камеры: ручное</li>
-									<li>Температурный режим: -12°C до -24°C</li>
-									<li>Мощность замораживания: 24 кг/сутки</li>
-									<li>Встроенный замок: есть</li>
-									<li>Количество корзин: 2 шт</li>
-									<li>Ножки/колесики: 2/2 шт</li>
-									<li>Лампа подсветки: есть</li>
-									<li>Уровень шума: 44 дБ</li>
-									<li>Ширина: 113 см</li>
-									<li>Глубина: 71.5 см</li>
-									<li>Высота: 85 см</li>
-									<li>Цвет: Белый</li>
-									<li>Вес НЕТТО: 50 кг</li>
-									<li>Производитель: Hiberg</li>
-								</ul>
+						<div className="w-full">
+							<div className="flex flex-row items-center justify-between space-y-0 pb-2">
+								<CardTitle className="text-sm font-medium text-primary">
+									Спецификации
+								</CardTitle>
+							</div>
+							<div>
+								<div className=" font-mono  list-disc [&>li]:mt-2">
+									{candidate?.productSpecifications}
+								</div>
 							</div>
 						</div>
+						<Accordion type="single" collapsible>
+							<AccordionItem value="item-1">
+								<AccordionTrigger>Почему такой рейтинг?</AccordionTrigger>
+								<AccordionContent className="font-mono">
+									{candidate?.complianceDetails}
+								</AccordionContent>
+							</AccordionItem>
+						</Accordion>
 					</div>
-					<Accordion type="single" collapsible>
-						<AccordionItem value="item-1">
-							<AccordionTrigger>Почему такой рейтинг?</AccordionTrigger>
-							<AccordionContent className="font-mono">
-								Исходя из предоставленных данных, продукт описан как холодильник
-								с общим объемом 450 л, классом энергопотребления A++ и типом
-								морозильник-ларь. Спецификации лота указывают на трехкамерный
-								холодильник с объемом 400-449 л, морозильным отделом и типом
-								управления электронным. Основные параметры, такие как тип и
-								объем, совпадают, однако есть расхождения в классе
-								энергопотребления (A++ против B) и других деталях, таких как
-								мощность замораживания и климатический класс.
-							</AccordionContent>
-						</AccordionItem>
-					</Accordion>
-				</div>
-			</div>
-			<div className="relative flex h-full min-h-[50vh] flex-col  bg-secondary p-4 ">
-				<div className="h-full w-full">
-					<ReactFlow
-						nodes={nodes}
-						edges={edges}
-						onConnect={onConnect}
-						nodeTypes={nodeTypes}
-						fitView
-					>
-						<Controls />
-						<Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-					</ReactFlow>
 				</div>
 			</div>
 		</main>
