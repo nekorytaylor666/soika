@@ -22,9 +22,10 @@ export const useTrpc = () => {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: isDev()
-            ? "http://localhost:8787/trpc"
-            : "https://backend.akmt-me23.workers.dev/trpc",
+          url:
+            process.env.NODE_ENV === "development"
+              ? "http://localhost:8787/trpc"
+              : "https://backend.akmt-me23.workers.dev/trpc",
           headers: () => ({
             Authorization:
               window.localStorage.getItem("oauth_access_token") ?? undefined,
