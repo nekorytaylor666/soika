@@ -1,8 +1,9 @@
 import { trpc } from "@/lib/trpc";
+import { isDev } from "@/lib/utils";
 import { QueryClient } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import { useState } from "react";
-
+import { getPlatformProxy } from "wrangler";
 export const useTrpc = () => {
   const [trpcQueryClient] = useState(
     () =>
@@ -15,12 +16,15 @@ export const useTrpc = () => {
         },
       })
   );
+  console.log(process.env.NODE_ENV);
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: "https://backend.akmt-me23.workers.dev/trpc",
+          url: isDev()
+            ? "http://localhost:8787/trpc"
+            : "https://backend.akmt-me23.workers.dev/trpc",
           headers: () => ({
             Authorization:
               window.localStorage.getItem("oauth_access_token") ?? undefined,

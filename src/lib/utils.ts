@@ -48,3 +48,7 @@ export function formatBytes(
     sizeType === "accurate" ? accurateSizes[i] ?? "Bytest" : sizes[i] ?? "Bytes"
   }`;
 }
+
+export function isDev() {
+  return process.env.NODE_ENV === "development";
+}
